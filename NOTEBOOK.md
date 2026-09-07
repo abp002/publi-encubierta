@@ -99,3 +99,108 @@ idioma; es que no hay nada que detectar. Consecuencias:
 **Estado al cerrar el día:** el proyecto vive. Positivos de sobra, columna de idioma
 útil, coste de exploración ≈ 60 MB de red y cero disco. Siguiente: descargar 3 ficheros
 (~32 GB) y materializar el subconjunto `es` + `en` en Parquet local.
+
+## 2026-09-07 (tarde) — Solo español. Arranca la fase B
+
+**Decisión: el estudio se restringe al español.** Tres razones, en orden de peso:
+
+1. **Metodológica.** En PU learning la constante central es `c = P(etiquetado | anuncio)`:
+   qué fracción de los anuncios reales lleva la etiqueta. Depende de las normas de
+   declaración de cada mercado. Mezclar inglés y español obliga a estimar dos `c` o a
+   aceptar una media que no describe a nadie. Un idioma = un estimador limpio.
+2. **El contraste que importa no es el idioma, es el país.** La ley que motiva el estudio es
+   española; el español de TikTok es mayoritariamente latinoamericano. La comparación
+   útil es ES frente a MX/AR/CO *dentro* del español. `country` es poco fiable fila a
+   fila, pero como agregado sobre millones de filas es usable.
+3. **Escala.** El inglés era el 36 % del dataset, el español el 3 %. El subconjunto se
+   reduce diez veces: 3 ficheros ≈ 15,6M filas y ~500k positivos, `desc` ≈ 400 MB.
+   Tan pequeño que escalar a los 27 ficheros (todo el español del dataset, ~140M filas,
+   ~4,6M positivos, ~7 GB en Parquet) es viable con descarga-extrae-borra y 11 GB de
+   disco constante. Queda como opción.
+
+Se pierde la frase "el español declara peor que el inglés". Vistosa, pero compara
+mercados distintos: estaba mal planteada de origen.
+
+**Fase B en marcha.** `scripts/materializar.py 0 1 2`: descarga `videos-00/01/02` (32 GB)
+a `data/raw/`, extrae `language = 'es'` con todas las columnas a `data/es/`, y apunta
+filas y positivos por fichero. Los crudos se conservan de momento: permiten re-extraer
+(p. ej. rescatar el 3 % de `un` con texto). Corre en segundo plano con DuckDB limitado.
+
+## 2026-09-07 (noche) — Fase B cerrada: `is_ad` no era lo que buscábamos
+
+**Materialización.** `videos-00/01/02` (32 GB) bajaron a ~80 MB/s: 135 s por fichero, 7 s de
+extracción cada uno. Subconjunto `es`: **15.575.722 filas, 506.909 con `is_ad = 1` (3,25 %)**,
+1,2 GB en tres Parquet. Los tres ficheros dan 3,27 / 3,30 / 3,19 %: particiones por hash,
+como prometía la tarjeta. Perfil completo en `informes/perfil_es.md` (solo agregados).
+
+### Tres columnas que parecían datos y eran procesos
+
+**1. `is_ad` tiene fecha de nacimiento.** 0,00 % en 2019–2022, 0,14 % en 2023, 0,64 % en 2024,
+**4,2 % en 2025 y 5,4 % en 2026**. No es que antes no hubiera anuncios: es que lo que mide
+no existía. Consecuencia inmediata para PU learning: `c = P(etiquetado | positivo)` no es
+constante, es ~0 hasta 2024. Cualquier modelo que mezcle años aprende "vídeo viejo = no
+anuncio". **El estudio se restringe a 2025+.**
+
+**2. `country` mide otra cosa.** El 76 % del contenido en español lleva `US`. No es TikTok
+hispano de EE. UU.: es probablemente la región del dispositivo anónimo con que se recolectó.
+Los países de LATAM y España aparecen, pero la columna solo vale como agregado y con
+cautela. España: 311.628 filas en 3 ficheros (2 % del español).
+
+**3. `is_ad` es TikTok Shop, no una colaboración declarada.** La tarjeta dice "marked as
+sponsored". El diagnóstico (`scripts/diagnostico_is_ad.py`) dice otra cosa:
+
+| grupo (2025+) | n | likes/views | coment./views | menciones | sonidos distintos/fila |
+|---|---|---|---|---|---|
+| `is_ad = 1` | 492.309 | **0,011** | **0,00000** | 17 % | **0,10** |
+| `#publi` / `#publicidad` | 7.201 | 0,040 | 0,00117 | **57 %** | 0,54 |
+| `#paidpartnership` | 68.229 | 0,061 | 0,00306 | 11 % | 0,50 |
+| orgánico | 9,78M | 0,050 | 0,00149 | 10 % | 0,13 |
+
+`is_ad = 1` tiene cinco veces menos likes por view que lo orgánico, cero comentarios, y una
+décima parte de sonidos distintos (pocas cuentas muy prolíficas). Sus co-hashtags:
+`#tiktokshop` (67k), `#tiktokshopcreatorpicks` (64k), `#tiktokshopblackfriday`,
+`#dealsforyoudays`. **El 40 % de sus captions dice literalmente "tiktokshop"** (×23 frente al
+resto). Es comercio con producto enlazado: catálogo, no influencer. Encaja con el resto:
+nace cuando Shop llega a MX/LATAM/ES (2024–25) y se concentra en US, su mayor mercado.
+
+**Y `#paidpartnership` tampoco.** De sus 68.229 filas, **65.018 llevan `#liveincentiveprogram`**:
+el programa con el que TikTok paga a creadores por hacer directos. El "socio pagador" es
+TikTok. Engagement de creador real, pero no es una marca. Fuera.
+
+Al quitar ambos, de las "declaraciones en texto" quedan **23.500 filas en 3 ficheros**, y
+el vocabulario que las define es español: `#publi`, `publicidad`, `patrocinado`,
+`colaboración pagada`, `en colaboración con`. Su firma es el 57 % de menciones: la marca
+etiquetada. `#ad` se queda con cautela (en US lo usan sobre todo afiliados de Shop, que ya
+salen por `is_ad`).
+
+### Universo del estudio, redefinido
+
+Filtro: `create_time >= 2025`, `is_ad = 0`, sin `#liveincentiveprogram` ni `#paidpartnership`.
+
+| | filas | declarados | % |
+|---|---|---|---|
+| Universo (3 ficheros) | 9.775.882 | 11.938 | 0,12 % |
+| … con marcador comercial (candidatos de la cascada) | 418.255 | 2.678 | 0,64 % |
+| España | 221.206 | 1.797 | **0,81 %** |
+
+España declara **el doble que México o Colombia (0,35 %) y cuatro veces más que Argentina**.
+Es el país con más declaración de la tabla — consistente con que aquí hay AUTOCONTROL y la
+CNMC — y a la vez el que más contenido comercial sin declarar tiene (11 %). Ese contraste
+es el estudio.
+
+### Lo que cambia en el diseño de la fase C
+
+1. **Positivos = declaración textual en español**, no `is_ad`. ~12k en 3 ficheros, ~1,8k de
+   España. Pocos: **hay que escalar a los 27 ficheros** (~107k positivos, ~16k de ES).
+   Es barato: descarga-extrae-borra, 11 GB de disco constante, ~1 h.
+2. **Fuga obligatoria de arreglar:** si los positivos se definen por `#publi`, el modelo
+   aprende `#publi`. Los tokens de declaración se enmascaran antes de vectorizar. Lo que
+   debe aprender es *lo demás* que caracteriza una colaboración: la marca mencionada, el
+   código de descuento, el léxico de producto.
+3. `is_ad` pasa de etiqueta a **criterio de exclusión**. TikTok Shop es comercial y está
+   señalizado por diseño (tarjeta de producto); no es publicidad encubierta.
+4. El contraste por país se mantiene, con la cautela del punto 2 sobre `country`.
+
+**Descartado hoy:** usar `is_ad` como verdad; usar `#paidpartnership` como señal; comparar
+español con inglés. **Aprendido:** una columna que se llama `is_ad` no te dice qué anuncio
+es. Perfilar antes de modelar ha cambiado el diseño en tres sitios sin escribir un modelo.
