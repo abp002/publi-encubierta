@@ -205,7 +205,7 @@ es el estudio.
 español con inglés. **Aprendido:** una columna que se llama `is_ad` no te dice qué anuncio
 es. Perfilar antes de modelar ha cambiado el diseño en tres sitios sin escribir un modelo.
 
-## 2026-09-08 — ¿Vale `country`? Sí, como agregado. Arranca ALE-115
+## 2026-09-07 (noche, II) — ¿Vale `country`? Sí, como agregado. Arranca ALE-115
 
 La duda que podía tumbar el ángulo España: si `country` es un artefacto (76 % `US`), el
 contraste por país no se puede defender. Comprobación (`scripts/validar_country.py`): léxico
