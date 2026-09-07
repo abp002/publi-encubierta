@@ -1,31 +1,38 @@
 # Baseline PU — data/es/videos-*.parquet
 
-Universo 87,143,302 filas · P 70,908 (0.081 %) · U muestreado 499,595 · test por bloques 25%
+Universo 85,391,342 filas · P 63,760 (0.075 %) · U muestreado 1,498,895 · test por bloques 25%
 
 ## Discriminación etiquetado vs no etiquetado (test)
 
 | AUC | AP | rasgos |
 |---|---|---|
-| 0.946 | 0.828 | 400,000 |
+| 0.945 | 0.706 | 400,000 |
 
 ## Elkan-Noto (tras ajuste de prior al universo)
 
-- c = P(etiquetado | positivo) = **0.1060**
-- Positivos ocultos estimados entre los no etiquetados: **0.428 %**
-- … entre los no etiquetados **con marcador comercial**: **1.76 %** (n=5,304)
-- Prevalencia total estimada de colaboraciones (declaradas + ocultas): **0.509 %**
+- c = P(etiquetado | positivo) = **0.1434**
+- Positivos ocultos estimados entre los no etiquetados: **0.301 %**
+- … entre los no etiquetados **con marcador comercial**: **1.30 %** (n=15,209)
+- Prevalencia total estimada de colaboraciones (declaradas + ocultas): **0.376 %**
 
 ## Por país (no etiquetados de test)
 
 | país | n | % ocultos est. | % ocultos entre comerciales |
 |---|---|---|---|
-| CO | 3,376 | 0.626 % | 1.36 % |
-| MX | 7,668 | 0.817 % | 2.71 % |
-| US | 94,669 | 0.304 % | 1.15 % |
+| AR | 5,599 | 0.606 % | 1.24 % |
+| CL | 3,337 | 1.237 % | 2.42 % |
+| CO | 10,452 | 0.542 % | 1.02 % |
+| DO | 4,042 | 0.430 % | 1.68 % |
+| EC | 5,181 | 0.459 % | 1.14 % |
+| ES | 8,785 | 1.296 % | 3.13 % |
+| MX | 22,686 | 0.588 % | 1.81 % |
+| PE | 7,259 | 0.701 % | 1.39 % |
+| US | 283,739 | 0.194 % | 0.94 % |
+| VE | 5,726 | 0.525 % | 1.06 % |
 
 ## 40 n-gramas con más peso positivo (comprobación de fuga)
 
-` # `, `usuario méxico`, `fm `, `usuario perú`, `tiktokshop enviosatodousa`, `usuario chile`, `usuario es`, `de usuario`, `mx `, ` : `, `video`, `usuario españa`, ` y `, `imprenta`, `paratiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii dealsforyoudays`, `sheintrends`, `avisos`, `nuestros amigos`, `video no`, `siempreconunasonrisa`, `amigos de`, ` . `, ` #a`, `metaads`, `lorealistarspain`, `os `, ` #p`, `usuario colombia`, `cliente`, ` #s`, ` , `, `con usuario`, `video está`, ` #i`, `impresion`, `código`, `hellolatinos`, `la nueva`, `nightreign`, `xtb`
+` # `, `usuario chile`, `usuario méxico`, `fm `, `usuario perú`, `karesh`, `hermana creatorsearchinsights`, ` : `, `usuario es`, `video no`, `mx `, `siempreconunasonrisa`, `lorealistarspain`, ` y `, ` . `, `xtb`, `de usuario`, `nuestros amigos`, `usuario colombia`, `hellolatinos`, ` , `, `cliente`, `con usuario`, `movads`, `sheintrends`, `zenky`, `nightreign`, `fyppppppppppppp`, `video está`, `amigos de`, `𝒷𝓇𝒶𝓉𝓏`, `𝒯𝑒𝒶𝓂 𝒷𝓇𝒶𝓉𝓏`, `visus`, `comercial`, `𝒯𝑒𝒶𝓂`, ` #a`, `video`, `xlo`, `metaads`, `live fypage`
 
 
-_276 s en total._
+_631 s en total._

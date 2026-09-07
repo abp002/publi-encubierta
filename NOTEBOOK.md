@@ -307,3 +307,52 @@ que Colombia y diez más que Argentina**, y tiene el 11 % de su contenido con ma
 comercial sin declarar. 13.763 positivos españoles: ya hay material para el contraste.
 
 Coste de la exploración completa hasta aquí: 289 GB de red, 41 GB de disco, un día.
+
+## 2026-09-07 (noche, V) — Baseline sobre los 27. España, por fin, en la tabla
+
+`scripts/baseline.py --u 1500000` sobre el universo v2 (85,4M filas, P = 63.760). Sin fuga en
+la lista de n-gramas: marcas con cuenta por país (`usuario chile`, `usuario méxico`,
+`usuario colombia`), campañas (`lorealistarspain`, `siempreconunasonrisa`, `hellolatinos`,
+`team bratz`), y algo de red publicitaria (`movads`, `metaads`, `xtb`) que la validación
+manual tendrá que juzgar. 631 s en el M4.
+
+| | 3 ficheros (v3) | **27 ficheros** |
+|---|---|---|
+| AUC (etiquetado vs no) | 0,921 | **0,945** |
+| AP | 0,516 | 0,706 |
+| c = P(etiquetado \| positivo) | 0,077 | **0,143** |
+| ocultos entre no etiquetados | 0,66 % | **0,30 %** |
+| ocultos entre los con marcador comercial | 2,3 % | **1,30 %** |
+| prevalencia total (declaradas + ocultas) | 0,74 % | **0,38 %** |
+
+Como predecía la cautela del `e1`: con nueve veces más positivos, `c` casi se duplica y la
+cota de ocultos baja a la mitad. **Sigue siendo cota superior**, y el que se mueva tanto con
+el tamaño de P dice que el estimador aún no ha convergido.
+
+**Por país (cota superior, `c` global):**
+
+| país | declarados | ocultos est. | total est. | declaran ≈ |
+|---|---|---|---|---|
+| **ES** | 0,68 % | 1,30 % | 1,98 % | **34 %** |
+| CL | — | 1,24 % | — | — |
+| MX | 0,21 % | 0,59 % | 0,80 % | 26 % |
+| CO | 0,16 % | 0,54 % | 0,70 % | 23 % |
+| AR | 0,07 % | 0,61 % | 0,68 % | 10 % |
+| US (sin región) | 0,03 % | 0,19 % | 0,22 % | 14 % |
+
+Lectura provisional que **ya tiene forma de titular**: España no es el país con menos
+colaboraciones ocultas — es el que **más colaboraciones tiene en total** (2 % del contenido
+frente a 0,7-0,8 % en MX/CO), y el que **mayor fracción declara** (~1 de cada 3, frente a
+1 de cada 4 en México y 1 de cada 10 en Argentina). La regulación se nota en la tasa de
+declaración, no en la cantidad de publicidad. Y aun así, dos de cada tres no declaran.
+
+**Limitación que invalida la tabla tal cual, y hay que arreglar antes de escribir nada:**
+la `c` es global, pero la razón de restringir a español era precisamente que `c` depende
+del mercado. Usar una `c` global **sobreestima los ocultos donde más se declara (España) y
+los subestima donde menos (Argentina)**: el contraste por país está sesgado *en contra* de
+la conclusión. Con 13.763 positivos españoles se puede estimar `c_ES` por separado; MX
+(11.100) también; CO y AR quedan justos. Siguiente paso en ALE-116, junto con un estimador
+de `c` más robusto que `e1`.
+
+**Descartado hoy:** dar ningún número por país como resultado. **Aprendido:** el mismo
+argumento que te lleva a separar idiomas te obliga a separar países al estimar `c`.
