@@ -21,9 +21,7 @@ GLOB = sys.argv[1] if len(sys.argv) > 1 else "data/es/videos-*.parquet"
 INFORME = pathlib.Path("informes/perfil_es.md")
 
 # Marcadores. Minúsculas; RE2 (\b funciona con ASCII, por eso las tildes van explícitas)
-from publi.lexico import COMER, live, positivo_sql  # única fuente de verdad; ver NOTEBOOK 2026-09-07
-
-LIVE = live("re2")
+from publi.lexico import COMER, positivo_sql, universo_sql  # única fuente de verdad; ver NOTEBOOK 2026-09-07
 
 
 def main():
@@ -35,7 +33,7 @@ def main():
                length(regexp_replace(lower("desc"), '[^\\p{{L}}]', '', 'g')) AS letras,
                {positivo_sql()} AS decl,
                regexp_matches(lower("desc"), '{COMER}') AS comer,
-               regexp_matches(lower("desc"), '{LIVE}') AS live
+               NOT {universo_sql()} AS fuera
         FROM '{GLOB}'""")
 
     out = []
@@ -80,16 +78,16 @@ def main():
         p(f"| {y} | {n:,} | {a:.2f} % |")
 
     p("\n## Universo del estudio (lo que entra en la fase C)\n")
-    p("Filtro: `create_time >= 2025`, `is_ad = 0` (TikTok Shop fuera: es comercio con producto enlazado, "
-      "no colaboración encubierta) y sin `#liveincentiveprogram`/`#paidpartnership` (programa LIVE de TikTok fuera).\n")
+    p("Filtro (`publi.lexico.universo_sql`): `create_time >= 2025`, `is_ad = 0` y sin léxico de TikTok Shop "
+      "(comercio con producto enlazado, señalizado por diseño), sin `#liveincentiveprogram`/`#paidpartnership` (programa LIVE).\n")
     p("| | filas | con declaración | % declarado |\n|---|---|---|---|")
-    u, d = con.sql("SELECT count(*), sum(decl::int) FROM t WHERE year(create_time) >= 2025 AND is_ad = 0 AND NOT live").fetchone()
+    u, d = con.sql("SELECT count(*), sum(decl::int) FROM t WHERE NOT fuera").fetchone()
     p(f"| Universo | {u:,} | {d:,} | {100*d/u:.2f} % |")
-    uc, dc = con.sql("SELECT count(*), sum(decl::int) FROM t WHERE year(create_time) >= 2025 AND is_ad = 0 AND NOT live AND comer").fetchone()
+    uc, dc = con.sql("SELECT count(*), sum(decl::int) FROM t WHERE NOT fuera AND comer").fetchone()
     p(f"| … con marcador comercial (candidatos de la cascada) | {uc:,} | {dc:,} | {100*dc/max(uc,1):.2f} % |")
     p("\nPor país (top 8):\n\n| país | universo | declarados | % declarado | % comercial sin decl. |\n|---|---|---|---|---|")
     for c, n, dd, cs in con.sql("""SELECT country, count(*), sum(decl::int), 100.0*sum((comer AND NOT decl)::int)/count(*)
-        FROM t WHERE year(create_time) >= 2025 AND is_ad = 0 AND NOT live GROUP BY 1 ORDER BY 2 DESC LIMIT 8""").fetchall():
+        FROM t WHERE NOT fuera GROUP BY 1 ORDER BY 2 DESC LIMIT 8""").fetchall():
         p(f"| {c} | {n:,} | {dd:,} | {100*dd/n:.2f} % | {cs:.2f} % |")
 
     INFORME.parent.mkdir(exist_ok=True)

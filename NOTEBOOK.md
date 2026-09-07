@@ -277,3 +277,33 @@ estudio será esa validación, no este número.
 
 Por país, la cota de ocultos entre contenido con marcador comercial: MX 3,7 %, CO 2,0 %,
 US 1,7 %. España aún no aparece: con 3 ficheros no llega a las 3.000 filas de test. ALE-115.
+
+## 2026-09-07 (noche, IV) — Los 27 ficheros. Todo el español del dataset en 11 GB
+
+ALE-115 cerrado: `videos-03..26` con descarga-extrae-borra, 115 s de descarga y 10 s de
+extracción de media por fichero, disco constante. **`data/es/`: 27 Parquet, 140.501.691
+filas en español, 4.565.127 con `is_ad`, 11,5 GB.** Tasa de `is_ad` por fichero entre 3,00 y
+3,57 %: particiones por hash, estable. Los tres crudos primeros se conservan (30 GB).
+
+**Universo redefinido por segunda vez.** La lista de n-gramas del baseline sobre los 27 aún
+traía `tiktokshop enviosatodousa`, `dealsforyoudays`, `sheintrends` (Shop sin `is_ad`: afiliados
+que usan `#ad`) e `imprenta`, `impresion`, `avisos` (rotulistas anunciándose con `#publicidad`).
+Ahora `publi.lexico.universo_sql` excluye también el contenido que **se identifica como
+Shop** en el texto, y `MARKETING` cubre el B2B de rotulación. Con eso:
+
+| Universo (27 ficheros, 2025+, sin Shop, sin LIVE) | filas | declarados | % |
+|---|---|---|---|
+| Total | 86.457.421 | 63.760 | 0,07 % |
+| Con marcador comercial (candidatos) | 3.500.906 | 13.512 | 0,39 % |
+| **España** | **2.031.040** | **13.763** | **0,68 %** |
+| México | 5.283.868 | 11.100 | 0,21 % |
+| Colombia | 2.368.910 | 3.875 | 0,16 % |
+| Perú | 1.676.457 | 4.099 | 0,24 % |
+| Argentina | 1.282.799 | 837 | 0,07 % |
+
+Las tasas aguantan al pasar de 3 a 27 ficheros (ES 0,81 → 0,68 % con el P ya depurado;
+el orden entre países no cambia). **España declara tres veces más que México, cuatro más
+que Colombia y diez más que Argentina**, y tiene el 11 % de su contenido con marcador
+comercial sin declarar. 13.763 positivos españoles: ya hay material para el contraste.
+
+Coste de la exploración completa hasta aquí: 289 GB de red, 41 GB de disco, un día.

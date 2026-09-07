@@ -22,7 +22,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score, roc_auc_score
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-from publi.lexico import COMER, live, positivo_sql  # noqa: E402
+from publi.lexico import COMER, positivo_sql, universo_sql  # noqa: E402
 from publi.particion import test_por_clave  # noqa: E402
 from publi.pu import ajustar_prior, estimar_c, peso_positivo_no_etiquetado  # noqa: E402
 from publi.texto import preparar  # noqa: E402
@@ -39,8 +39,7 @@ def cargar(glob: str, n_u: int, semilla: int):
                {positivo_sql()} AS decl,
                regexp_matches(lower("desc"), '{COMER}') AS comer
         FROM read_parquet('{glob}', filename=true, file_row_number=true)
-        WHERE year(create_time) >= 2025 AND is_ad = 0
-          AND NOT regexp_matches(lower("desc"), '{live()}') AND length("desc") >= 10""")
+        WHERE {universo_sql()} AND length("desc") >= 10""")
     n_univ, n_pos = con.sql("SELECT count(*), sum(decl::int) FROM u").fetchone()
     pos = con.sql("SELECT bloque, texto, country, comer FROM u WHERE decl").df()
     neg = con.sql(f"SELECT bloque, texto, country, comer FROM u WHERE NOT decl USING SAMPLE {n_u} ROWS (reservoir, {semilla})").df()
@@ -98,7 +97,7 @@ def main():
            "## Por país (no etiquetados de test)\n",
            "| país | n | % ocultos est. | % ocultos entre comerciales |\n|---|---|---|---|"]
     for pais, grp in u_te.groupby("country"):
-        if len(grp) >= 3_000:
+        if len(grp) >= 2_000:
             gc = grp[grp["comer"]]
             out.append(f"| {pais} | {len(grp):,} | {100*grp['w'].mean():.3f} % | {100*gc['w'].mean() if len(gc) else float('nan'):.2f} % |")
     nombres = np.concatenate([vw.get_feature_names_out(), vc.get_feature_names_out()])

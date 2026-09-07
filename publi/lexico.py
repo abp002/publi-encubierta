@@ -20,7 +20,11 @@ HASHTAGS_LIVE = "liveincentiveprogram|paidpartnership"
 # Cuentas cuyo tema es la publicidad (agencias, locutores, cursos): no son creadores declarando.
 # Se excluyen de P (precisión), no del universo.
 MARKETING = (r"\b(agencia|marketing|mercadeo|locuci[oó]n|locutor|ventas|tu marca|tu negocio|tu empresa|"
-             r"emprendedor|clientes|engañosa|curso|estrategia|branding|community manager|dise[ñn]o gr[aá]fico|spot|jingle)\b")
+             r"emprendedor|clientes|engañosa|curso|estrategia|branding|community manager|dise[ñn]o gr[aá]fico|spot|jingle|imprenta|impresi[oó]n|avisos|r[oó]tulos?|lonas|vinilos|pvc|publicitari[oa]s?)\b")
+
+# Contenido que se identifica como TikTok Shop sin llevar is_ad (afiliados con #ad): fuera del
+# universo por la misma razón que is_ad = 1. También el léxico de campañas de Shop.
+SHOP = r"tiktok ?shop|dealsforyoudays|creatorpicks|tiktokmademebuyit|enviosatodousa"
 
 # Enmascarado para los RASGOS: superconjunto por raíces del léxico de etiquetar. Sobre-enmascarar
 # es seguro (se pierde un poco de señal); sub-enmascarar es fuga. El baseline del 2026-09-07
@@ -48,6 +52,12 @@ def live(motor: str = "re2") -> str:
     return _hashtags(HASHTAGS_LIVE, motor)
 
 
+def universo_sql(col: str = 'lower("desc")') -> str:
+    """Condición SQL del universo: 2025+, sin Shop (is_ad o autoidentificado), sin programa LIVE."""
+    return (f"(year(create_time) >= 2025 AND is_ad = 0 AND NOT regexp_matches({col}, '{live()}') "
+            f"AND NOT regexp_matches({col}, '{SHOP}'))")
+
+
 def positivo_sql(col: str = 'lower("desc")') -> str:
     """Expresión SQL (RE2) que define P: declaración y no tema-marketing."""
     return f"(regexp_matches({col}, '{decl()}') AND NOT regexp_matches({col}, '{MARKETING}'))"
@@ -55,6 +65,7 @@ def positivo_sql(col: str = 'lower("desc")') -> str:
 
 RE_DECL = re.compile(decl("py"), re.IGNORECASE)
 RE_MARKETING = re.compile(MARKETING, re.IGNORECASE)
+RE_SHOP = re.compile(SHOP, re.IGNORECASE)
 RE_MASCARA = re.compile(MASCARA, re.IGNORECASE)
 RE_LIVE = re.compile(live("py"), re.IGNORECASE)
 RE_COMER = re.compile(COMER, re.IGNORECASE)
