@@ -15,19 +15,16 @@ import sys
 
 import duckdb
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+
 GLOB = sys.argv[1] if len(sys.argv) > 1 else "data/es/videos-*.parquet"
 INFORME = pathlib.Path("informes/perfil_es.md")
 
 # Marcadores. Minúsculas; RE2 (\b funciona con ASCII, por eso las tildes van explícitas)
-# Declaración de colaboración con marca, en el vocabulario que usan los creadores en español.
-# Fuera a propósito (ver NOTEBOOK 2026-09-07): #paidpartnership (= programa LIVE de TikTok, no marcas),
-# #pr (= Puerto Rico), #colab y "regalo de" (no comerciales). #ad se queda con cautela: en US lo usan
-# sobre todo afiliados de TikTok Shop, que se excluyen del universo por is_ad.
-DECL = (r"(^|\s)#(ad|ads|publi|publicidad|anuncio|patrocinado|sponsored|colaboracionpagada)(\s|$|#)"
-        r"|\b(publicidad|patrocinad[oa]s?|colaboraci[oó]n pagada|contenido pagado|en colaboraci[oó]n con|producto regalado)\b")
-LIVE = r"(^|\s)#(liveincentiveprogram|paidpartnership)(\s|$|#)"
-COMER = (r"link en (la |mi )?bio|\bc[oó]digo\b|\bdescuento|\benv[ií]o gratis|\bcup[oó]n|\boferta|\bpromo"
-         r"|\bcompra|\btienda|\bdisponible en|\bpedidos?\b|\bwhatsapp|€|\d+\s?%")
+from publi.lexico import COMER, decl, live  # única fuente de verdad; ver NOTEBOOK 2026-09-07
+
+DECL = decl("re2")
+LIVE = live("re2")
 
 
 def main():

@@ -5,7 +5,13 @@ declaró una colaboración": nace en 2024-25, se concentra en US, casi nunca coi
 #publi/#ad, y su engagement es el de un catálogo, no el de un creador. Hipótesis: es
 contenido de TikTok Shop (vídeo con producto enlazado). Este script reúne la evidencia.
 """
+import pathlib
+import sys
+
 import duckdb
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+from publi.lexico import _hashtags  # noqa: E402
 
 con = duckdb.connect()
 con.sql("SET threads=6; SET memory_limit='10GB'")
@@ -13,7 +19,7 @@ con.sql("""CREATE TEMP TABLE t AS
     SELECT is_ad, views, likes, comments, mentions, music_title, country, create_time, lower("desc") AS d
     FROM 'data/es/videos-*.parquet' WHERE year(create_time) >= 2025""")
 
-H = lambda tags: f"regexp_matches(d, '(^|\\s)#({tags})(\\s|$|#)')"
+H = lambda tags: f"regexp_matches(d, '{_hashtags(tags, 're2')}')"
 grupos = {
     "is_ad = 1": "is_ad = 1",
     "#ad / #ads": H("ad|ads"),
