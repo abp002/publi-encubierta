@@ -1,0 +1,27 @@
+# Allowlist: todo ignorado por defecto, se permite explícitamente lo versionable
+*
+!*/
+!.gitignore
+!.python-version
+!pyproject.toml
+!uv.lock
+!*.md
+!*.py
+!*.sql
+!*.toml
+!*.txt
+!*.yml
+!*.yaml
+!*.svg
+!*.png
+
+# Datos: NUNCA, aunque coincidan con lo de arriba (las reglas posteriores ganan)
+data/
+*.parquet
+*.csv
+*.jsonl
+*.db
+*.duckdb
+*.duckdb.wal
+.venv/
+__pycache__/
