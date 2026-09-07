@@ -204,3 +204,28 @@ es el estudio.
 **Descartado hoy:** usar `is_ad` como verdad; usar `#paidpartnership` como señal; comparar
 español con inglés. **Aprendido:** una columna que se llama `is_ad` no te dice qué anuncio
 es. Perfilar antes de modelar ha cambiado el diseño en tres sitios sin escribir un modelo.
+
+## 2026-09-08 — ¿Vale `country`? Sí, como agregado. Arranca ALE-115
+
+La duda que podía tumbar el ángulo España: si `country` es un artefacto (76 % `US`), el
+contraste por país no se puede defender. Comprobación (`scripts/validar_country.py`): léxico
+peninsular (*vosotros, vuestro, €, coche, móvil, ordenador…*) frente a léxico LATAM
+(*ustedes, $, carro, celular, voseo, güey, parce…*) en captions de 2025+ con ≥ 20 caracteres.
+
+| país | filas | % peninsular | % LATAM | ratio |
+|---|---|---|---|---|
+| **ES** | 222.578 | **14,2 %** | **1,1 %** | **13,2** |
+| PE | 181.415 | 8,6 % | 2,2 % | 3,9 |
+| MX | 581.594 | 5,4 % | 3,6 % | 1,5 |
+| AR | 138.678 | 7,5 % | **8,6 %** | 0,9 |
+| US | 7.449.686 | 4,4 % | 2,4 % | 1,8 |
+
+`ES` se separa de todo lo demás por un orden de magnitud; Argentina invierte el signo con
+el voseo, como debe. El ~4-8 % de "peninsular" que aparece en todos los países es el ruido
+de palabras compartidas (*tío, os…*): la señal está en la diferencia, no en el nivel.
+`US` se comporta como la media: **es el cajón de "región desconocida"**, no TikTok hispano
+de EE. UU. Consecuencia: `country` vale para agregar por país; `US` se reporta como
+"sin región". El contraste ES vs LATAM está justificado.
+
+Con eso, escalar a 27 ficheros tiene sentido: ALE-115 en marcha, descarga-extrae-borra con
+`--borrar-crudo`, disco constante.

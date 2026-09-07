@@ -1,6 +1,6 @@
 """Fase B — descargar ficheros crudos y materializar el subconjunto en español.
 
-Uso:  uv run python scripts/materializar.py 0 1 2
+Uso:  uv run python scripts/materializar.py 0 1 2 [--borrar-crudo]
 
 Por cada índice: descarga videos-XX.parquet a data/raw/ (si no está), extrae las filas con
 language = 'es' a data/es/videos-XX.parquet (zstd) y apunta filas y positivos en
@@ -28,7 +28,7 @@ def conectar() -> duckdb.DuckDBPyConnection:
     return con
 
 
-def materializar(con, i: int) -> None:
+def materializar(con, i: int, borrar_crudo: bool = False) -> None:
     nombre = f"videos-{i:02d}.parquet"
     salida = ES / nombre
     if salida.exists():
@@ -51,15 +51,20 @@ def materializar(con, i: int) -> None:
     with open(ES / "resumen.jsonl", "a") as f:
         f.write(json.dumps({"fichero": nombre, "filas_es": n, "is_ad": ads,
                             "seg_descarga": round(t_dl), "seg_extraccion": round(t_ex), "mb": round(mb)}) + "\n")
+    if borrar_crudo:
+        pathlib.Path(ruta).unlink()
+        print(f"          crudo borrado: {nombre}", flush=True)
 
 
-def main(indices):
+def main(indices, borrar_crudo=False):
     RAW.mkdir(parents=True, exist_ok=True)
     ES.mkdir(parents=True, exist_ok=True)
     con = conectar()
     for i in indices:
-        materializar(con, i)
+        materializar(con, i, borrar_crudo)
 
 
 if __name__ == "__main__":
-    main([int(a) for a in sys.argv[1:]] or [0])
+    args = sys.argv[1:]
+    borrar = "--borrar-crudo" in args
+    main([int(a) for a in args if not a.startswith("--")] or [0], borrar)
