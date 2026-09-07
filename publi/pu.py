@@ -35,3 +35,15 @@ def peso_positivo_no_etiquetado(g: np.ndarray, c: float) -> np.ndarray:
 def prevalencia_en_no_etiquetados(g_no_etiquetados: np.ndarray, c: float) -> float:
     """Fracción estimada de positivos ocultos entre los no etiquetados."""
     return float(peso_positivo_no_etiquetado(g_no_etiquetados, c).mean())
+
+
+def ajustar_prior(g: np.ndarray, pi_muestra: float, pi_real: float) -> np.ndarray:
+    """Corrige P(s=1|x) cuando se entrenó con una proporción de etiquetados distinta de la real.
+    Se entrena con P:U submuestreado (p. ej. 2 %) pero en el universo P es el 0,12 %: sin este
+    ajuste g no es P(s=1|x) y la corrección de Elkan-Noto queda inflada. Ajuste de odds."""
+    if not (0 < pi_muestra < 1 and 0 < pi_real < 1):
+        raise ValueError("proporciones en (0, 1)")
+    g = np.clip(np.asarray(g, dtype=float), 1e-12, 1 - 1e-12)
+    r = (pi_real / (1 - pi_real)) / (pi_muestra / (1 - pi_muestra))
+    odds = g / (1 - g) * r
+    return odds / (1 + odds)

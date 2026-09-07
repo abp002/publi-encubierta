@@ -229,3 +229,51 @@ de EE. UU. Consecuencia: `country` vale para agregar por país; `US` se reporta 
 
 Con eso, escalar a 27 ficheros tiene sentido: ALE-115 en marcha, descarga-extrae-borra con
 `--borrar-crudo`, disco constante.
+
+## 2026-09-07 (noche, III) — Primer baseline PU, y lo que enseñó la lista de n-gramas
+
+Mientras ALE-115 descarga, el paquete `publi/` (léxico único por motor, enmascarado,
+partición por bloques, Elkan-Noto con ajuste de prior; 21 tests) y `scripts/baseline.py`:
+TF-IDF palabras (1-2) + caracteres (3-5), regresión logística, P = declaración textual,
+U = 500k de muestra, split por bloques de 2.000 filas del crudo. Sobre los 3 ficheros.
+
+**v1 — AUC 0,926, y mentira.** La lista de n-gramas con más peso lo delataba: `blici`,
+`ubli`, `publ`, `anunc`, `pagada`. El enmascarado usaba el mismo regex que la etiqueta, y
+la etiqueta es precisa a propósito: "publi" como palabra suelta, `#fyp#publicidad` pegado
+o "colab pagada" no la activan, pero el modelo los ve. **El regex de enmascarar tiene que
+ser un superconjunto amplio (por raíces) del de etiquetar, no el mismo.** Ahora `MASCARA`
+quita `publi*`, `patrocin*`, `anunci*`, `sponsor*`, `colab*`, `regalad*`, `pagada`, `ad/ads`
+y las frases enteras ("en colaboración con", "patrocinado por"), porque de "en colaboración
+con @marca" sobrevivía `en con`. Test de regresión con los n-gramas que se colaron.
+
+**También P estaba sucio.** Segundo hallazgo de la lista: `marketing`, `engañosa`, `aviso
+de`, `locución`, `fm`, `tu marca`, `ventas`. La palabra suelta "publicidad" capturaba a
+gente que habla *de* publicidad. Cuantificado: de sus 3.287 filas, el 34 % tiene tema
+marketing (el universo, 1,2 %) y solo el 20 % etiqueta una marca; los hashtags `#publi`/
+`#publicidad`/`#ad`, en cambio, etiquetan marca en el 54 % y "colaboración pagada" en el
+72 %. **Fuera "publicidad" suelta; y P excluye el tema marketing** (`MARKETING`). P baja
+de 11.938 a 7.816 (0,081 % del universo). Menos, pero son colaboraciones.
+
+**v3 — AUC 0,921, sin fuga.** Lo que pesa ahora: `usuario méxico`, `usuario chile`,
+`usuario españa` (marcas con cuenta por país), `lorealistarspain`, `maybelline`,
+`activacionesdemarca`, `compartetuintensidad` (campañas). Es decir: **una colaboración se
+reconoce por la marca etiquetada y el hashtag de campaña**, y eso es lo que un vídeo sin
+declarar también tiene. Residuo B2B menor (`imprenta`, `pvc`, `diseñografico`): rotulistas
+que usan `#publicidad` para anunciar sus servicios. Pendiente ampliar `MARKETING`.
+
+| Elkan-Noto (test, 3 ficheros) | valor |
+|---|---|
+| c = P(etiquetado \| positivo) | 0,077 |
+| positivos ocultos entre no etiquetados | 0,66 % |
+| … entre los que tienen marcador comercial | 2,3 % |
+| prevalencia total estimada (declaradas + ocultas) | 0,74 % |
+
+**Cautela obligatoria:** el estimador `e1` de `c` (media de `g` en positivos de validación)
+solo es exacto si las clases son separables; cuando no lo son, **subestima `c` y por tanto
+sobreestima los ocultos** (hay test que lo demuestra en `tests/test_pu.py`). Estos números
+son una **cota superior**, no una estimación. El siguiente paso es un estimador de `c` más
+robusto (top-k de positivos, o TIcE) y, sobre todo, la validación manual: el resultado del
+estudio será esa validación, no este número.
+
+Por país, la cota de ocultos entre contenido con marcador comercial: MX 3,7 %, CO 2,0 %,
+US 1,7 %. España aún no aparece: con 3 ficheros no llega a las 3.000 filas de test. ALE-115.

@@ -52,3 +52,14 @@ def test_recupera_la_prevalencia_oculta_con_posterior_calibrada():
     assert prevalencia_en_no_etiquetados(g[~s], c) == pytest.approx(ocultos_reales, abs=0.005)
     # y en este escenario e1 subestima c (P(y=1|x)<1 en los etiquetados): hay que saberlo
     assert estimar_c(g[s]) < c
+
+
+def test_ajustar_prior_identidad_y_direccion():
+    from publi.pu import ajustar_prior
+    g = np.array([0.1, 0.5, 0.9])
+    assert ajustar_prior(g, 0.02, 0.02) == pytest.approx(g)
+    menos = ajustar_prior(g, 0.02, 0.001)
+    assert (menos < g).all()
+    # con odds: g=0.5 (odds 1) y r = (0.001/0.999)/(0.02/0.98) → odds r
+    r = (0.001 / 0.999) / (0.02 / 0.98)
+    assert menos[1] == pytest.approx(r / (1 + r))

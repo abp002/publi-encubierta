@@ -28,3 +28,13 @@ def test_parametros_invalidos():
     for args in [(0, 10, 0.2), (100, 0, 0.2), (100, 10, 0.0), (100, 10, 1.0)]:
         with pytest.raises(ValueError):
             bloques_test(*args)
+
+
+def test_por_clave_no_parte_claves():
+    from publi.particion import test_por_clave
+    claves = np.repeat(np.arange(2_000), 7)
+    m = test_por_clave(claves, 0.3, semilla=3)
+    for k in range(2_000):
+        lado = m[claves == k]
+        assert lado.all() or not lado.any()
+    assert m.mean() == pytest.approx(0.3, abs=0.03)

@@ -21,9 +21,8 @@ GLOB = sys.argv[1] if len(sys.argv) > 1 else "data/es/videos-*.parquet"
 INFORME = pathlib.Path("informes/perfil_es.md")
 
 # Marcadores. Minúsculas; RE2 (\b funciona con ASCII, por eso las tildes van explícitas)
-from publi.lexico import COMER, decl, live  # única fuente de verdad; ver NOTEBOOK 2026-09-07
+from publi.lexico import COMER, live, positivo_sql  # única fuente de verdad; ver NOTEBOOK 2026-09-07
 
-DECL = decl("re2")
 LIVE = live("re2")
 
 
@@ -34,7 +33,7 @@ def main():
         CREATE TEMP TABLE t AS
         SELECT is_ad, country, create_time,
                length(regexp_replace(lower("desc"), '[^\\p{{L}}]', '', 'g')) AS letras,
-               regexp_matches(lower("desc"), '{DECL}') AS decl,
+               {positivo_sql()} AS decl,
                regexp_matches(lower("desc"), '{COMER}') AS comer,
                regexp_matches(lower("desc"), '{LIVE}') AS live
         FROM '{GLOB}'""")
