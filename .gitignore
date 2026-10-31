@@ -2,6 +2,7 @@
 *
 !*/
 !.gitignore
+!LICENSE
 !.python-version
 !pyproject.toml
 !uv.lock

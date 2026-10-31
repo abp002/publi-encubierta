@@ -25,7 +25,7 @@ Bitácora: Alejandro
 
 ## Bitácora pública
 El proceso, con fecha y decisiones, va en `NOTEBOOK.md`. El porqué de las decisiones
-que sirven fuera de este repo va al vault con `/apuntar`.
+que sirven fuera de este repo va a las notas del autor.
 
 ## Estado y cómo retomar (actualizado 2026-09-08)
 
